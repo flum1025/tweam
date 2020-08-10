@@ -8,7 +8,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/flum1025/tweam/internal/aws"
+	"github.com/flum1025/tweam/internal/app"
 	"github.com/flum1025/tweam/internal/config"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -16,21 +16,21 @@ import (
 )
 
 type server struct {
-	config    *config.Config
-	sqsClient *aws.SQSClient
+	config *config.Config
+	app    *app.App
 }
 
 func NewServer(
 	config *config.Config,
 ) (*server, error) {
-	sqsClient, err := aws.NewSQSClient(config)
+	app, err := app.NewApp(config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize SQSClient: %w", err)
+		return nil, fmt.Errorf("get app: %w", err)
 	}
 
 	return &server{
-		config:    config,
-		sqsClient: sqsClient,
+		config: config,
+		app:    app,
 	}, nil
 }
 
@@ -53,7 +53,6 @@ func (s *server) Run(port int) error {
 }
 
 func (s *server) registerRoutes(router chi.Router) {
-	router.Post("/webhook/worker", s.worker)
 	router.Post("/webhook/twistributer", s.twistributer)
 }
 

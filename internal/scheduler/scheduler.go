@@ -1,14 +1,10 @@
 package scheduler
 
 import (
-	"bytes"
 	"fmt"
 	"log"
-	"net/http"
 	"time"
 
-	"github.com/aws/aws-sdk-go/service/sqs"
-	"github.com/flum1025/tweam/internal/aws"
 	"github.com/flum1025/tweam/internal/config"
 	"github.com/flum1025/tweam/internal/twitter"
 	"github.com/robfig/cron/v3"
@@ -38,17 +34,10 @@ func NewScheduler(
 }
 
 func (s *scheduler) Run(workerEndpoint string) error {
-	sqsd, err := s.sqsd(workerEndpoint)
-	if err != nil {
-		return fmt.Errorf("initialize sqsd: %w", err)
+	for _, account := range s.config.Accounts {
+		s.cron.AddFunc(fmt.Sprintf("@every %ds", account.DirectmessageFetchInterval), s.directmessage(account))
+		s.cron.AddFunc(fmt.Sprintf("@every %ds", account.HomeTimelineFetchInterval), s.homeTimeline(account))
 	}
-
-	s.cron.AddFunc("@every 1s", sqsd)
-
-	// for _, account := range s.config.Accounts {
-	// 	s.cron.AddFunc(fmt.Sprintf("@every %ds", account.FetchInterval), s.directmessage(account))
-	// 	s.cron.AddFunc(fmt.Sprintf("@every %ds", account.FetchInterval), s.homeTimeline(account))
-	// }
 
 	log.Println(fmt.Sprintf("%d schedules have been registered", len(s.cron.Entries())))
 
@@ -71,44 +60,4 @@ func (s *scheduler) homeTimeline(config config.Account) func() {
 		log.Println("Running homeTimeline")
 		log.Println("Finish homeTimeline")
 	}
-}
-
-func (s *scheduler) sqsd(workerEndpoint string) (func(), error) {
-	sqsClient, err := aws.NewSQSClient(s.config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize SQSClient: %w", err)
-	}
-
-	return func() {
-		log.Println("Running sqsd")
-
-		messages, err := sqsClient.ReceiveMessages()
-		if err != nil {
-			log.Println(fmt.Sprintf("[ERROR] failed to receive message: %v", err))
-			return
-		}
-
-		log.Println(fmt.Sprintf("%d messages received", len(messages)))
-
-		for _, message := range messages {
-			go func(message *sqs.Message) {
-
-				client := http.Client{Timeout: timeout}
-
-				_, err := client.Post(workerEndpoint, "application/json", bytes.NewBufferString(*message.Body))
-				if err != nil {
-					log.Println(fmt.Sprintf("[ERROR] request to %v: %v", workerEndpoint, err))
-					return
-				}
-
-				err = sqsClient.DeleteMessage(*message.ReceiptHandle)
-				if err != nil {
-					log.Println(fmt.Sprintf("[ERROR] failed to delete message: %v", err))
-					return
-				}
-			}(message)
-		}
-
-		log.Println("Finish sqsd")
-	}, nil
 }

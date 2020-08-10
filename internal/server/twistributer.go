@@ -30,25 +30,10 @@ func (s *server) twistributer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	messages := parseEvent(params)
-
-	// for _, message := range messages {
-	// 	body, err := json.Marshal(message.Body)
-	// 	if err != nil {
-	// 		log.Println(fmt.Sprintf("[ERROR] failed to marshal json: %v", err))
-	// 		return
-	// 	}
-	//
-	// 	spew.Dump(string(body))
-	//
-	// 	if err = s.sqsClient.SendMessage(
-	// 		string(body),
-	// 		message.GroupID,
-	// 		message.DeduplicationID,
-	// 	); err != nil {
-	// 		log.Println(fmt.Sprintf("[ERROR] failed to send message: %v", err))
-	// 		return
-	// 	}
-	// }
+	if err = s.app.PublishMessages(messages); err != nil {
+		log.Println(fmt.Sprintf("[ERROR] failed to publish messages: %v", err))
+		return
+	}
 
 	render.PlainText(w, r, "ok")
 }

@@ -8,9 +8,13 @@ import (
 )
 
 type Config struct {
-	Accounts      []Account `yaml:"accounts"`
-	QueueUrl      string    `yaml:"queue_url"`
-	QueueEndpoint string    `yaml:"queue_endpoint"`
+	Accounts Accounts `yaml:"accounts"`
+	Redis    Redis    `yaml:"redis"`
+}
+
+type Redis struct {
+	Address string `yaml:"address"`
+	DB      int    `yaml:"db"`
 }
 
 type Account struct {
@@ -19,6 +23,18 @@ type Account struct {
 	HomeTimelineFetchInterval  int      `yaml:"home_timeline_fetch_interval"`
 	DirectmessageFetchInterval int      `yaml:"directmessage_fetch_interval"`
 	Webhooks                   []string `yaml:"webhooks"`
+}
+
+type Accounts []Account
+
+func (a Accounts) Find(userID string) *Account {
+	for _, account := range a {
+		if account.ID == userID {
+			return &account
+		}
+	}
+
+	return nil
 }
 
 type Token struct {
