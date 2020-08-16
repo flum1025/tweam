@@ -16,3 +16,5 @@ FROM alpine:latest
 
 COPY --from=builder /src/scheduler /usr/local/bin/scheduler
 COPY --from=builder /src/worker /usr/local/bin/worker
+
+EXPOSE 3000
