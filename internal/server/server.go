@@ -12,6 +12,7 @@ import (
 	"github.com/flum1025/tweam/internal/config"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
 )
 
@@ -53,7 +54,12 @@ func (s *server) Run(port int) error {
 }
 
 func (s *server) registerRoutes(router chi.Router) {
+	router.Get("/health", health)
 	router.Post("/webhook/twistributer", s.twistributer)
+}
+
+func health(w http.ResponseWriter, r *http.Request) {
+	render.PlainText(w, r, "ok")
 }
 
 func parse(body io.Reader, params interface{}) ([]byte, error) {
