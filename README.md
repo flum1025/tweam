@@ -3,6 +3,12 @@ Tweam
 
 Tweam provides a Webhook by using `Account Activity API` and `Timeline API`.
 
+Required
+---
+
+- go 1.14
+- redis
+
 Installation
 ---
 
