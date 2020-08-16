@@ -1,0 +1,14 @@
+accounts:
+  - id: 123456
+    token:
+      consumer_key: consumer_key
+      consumer_secret: consumer_secret
+      access_token: access_token
+      access_token_secret: access_token_secret
+    home_timeline_fetch_interval: 60
+    mention_timeline_fetch_interval: 60
+    webhooks:
+      - http://example.com
+redis:
+  address: localhost:6379
+  db: 0
