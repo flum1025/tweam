@@ -47,6 +47,24 @@ func (c *RedisClient) Get(key string) (*string, error) {
 	return &val, nil
 }
 
+func (c *RedisClient) GetInt64(key string) (*int64, error) {
+	get := c.client.Get(ctx, key)
+	if err := get.Err(); err != nil {
+		if err == redis.Nil {
+			return nil, nil
+		}
+
+		return nil, fmt.Errorf("redis: get key: %w", err)
+	}
+
+	n, err := get.Int64()
+	if err != nil {
+		return nil, fmt.Errorf("redis: get int64: %w", err)
+	}
+
+	return &n, nil
+}
+
 func (c *RedisClient) Set(key string, val interface{}, expiration time.Duration) error {
 	if err := c.client.Set(ctx, key, val, expiration).Err(); err != nil {
 		return fmt.Errorf("redis: set and expire: %w", err)

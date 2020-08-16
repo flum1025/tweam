@@ -10,7 +10,6 @@ import (
 
 func main() {
 	configPath := flag.String("config", "", "config path")
-	workerEndpoint := flag.String("worker_endpoint", "", "worker endpoint")
 	flag.Parse()
 
 	config, err := config.NewConfig(*configPath)
@@ -20,8 +19,12 @@ func main() {
 		return
 	}
 
-	scheduler := scheduler.NewScheduler(config)
-	if err = scheduler.Run(*workerEndpoint); err != nil {
-		log.Fatalf("failed to run scheduler: %v", err)
+	scheduler, err := scheduler.NewScheduler(config)
+	if err != nil {
+		log.Fatalf("failed to get scheduler: %v", err)
+
+		return
 	}
+
+	scheduler.Run()
 }

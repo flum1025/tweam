@@ -22,6 +22,7 @@ type Account struct {
 	Token                      Token    `yaml:"token"`
 	HomeTimelineFetchInterval  int      `yaml:"home_timeline_fetch_interval"`
 	DirectmessageFetchInterval int      `yaml:"directmessage_fetch_interval"`
+	MentionTimeline            int      `yaml:"mention_timeline_fetch_interval"`
 	Webhooks                   []string `yaml:"webhooks"`
 }
 

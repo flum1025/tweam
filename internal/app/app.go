@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/flum1025/tweam/internal/config"
@@ -45,24 +46,18 @@ func (a *App) PublishMessages(messages []entity.Message) error {
 		}
 
 		if !exists {
-			a.publishMessages(messages)
-
 			err := a.redis.Set(key, 1, time.Minute*30)
 			if err != nil {
 				return fmt.Errorf("redis set: %w", err)
+			}
+
+			if err := a.publishMessage(message); err != nil {
+				log.Println(fmt.Sprintf("[ERROR] failed to publish message: %v", err))
 			}
 		}
 	}
 
 	return nil
-}
-
-func (a *App) publishMessages(messages []entity.Message) {
-	for _, message := range messages {
-		if err := a.publishMessage(message); err != nil {
-			log.Println(fmt.Sprintf("[ERROR] failed to publish message: %v", err))
-		}
-	}
 }
 
 func (a *App) publishMessage(message entity.Message) error {
@@ -77,7 +72,11 @@ func (a *App) publishMessage(message entity.Message) error {
 		return fmt.Errorf("json marshal: %w", err)
 	}
 
+	var wg sync.WaitGroup
+
 	for _, webhook := range account.Webhooks {
+		wg.Add(1)
+
 		go func(webhook string) {
 			log.Println(fmt.Sprintf("requesting to %v, user_id=%v", webhook, message.ForUserID))
 
@@ -86,12 +85,16 @@ func (a *App) publishMessage(message entity.Message) error {
 
 			if err != nil {
 				log.Println(fmt.Sprintf("[ERROR] request to %v: %v", webhook, err))
+				wg.Done()
 				return
 			}
 
+			wg.Done()
 			log.Println(fmt.Sprintf("delivered to %v, user_id=%v", webhook, message.ForUserID))
 		}(webhook)
 	}
+
+	wg.Wait()
 
 	return nil
 }

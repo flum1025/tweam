@@ -12,12 +12,13 @@ import (
 )
 
 type event struct {
-	ForUserID           string            `json:"for_user_id"`
-	TweetCreateEvents   []twitter.Tweet   `json:"tweet_create_events"`
-	DirectMessageEvents json.RawMessage   `json:"direct_message_events"`
-	FavoriteEvents      []json.RawMessage `json:"favorite_events"`
-	FollowEvents        []json.RawMessage `json:"follow_events"`
-	TweetDeleteEvents   []json.RawMessage `json:"tweet_delete_events"`
+	ForUserID           string                       `json:"for_user_id"`
+	TweetCreateEvents   []twitter.Tweet              `json:"tweet_create_events"`
+	DirectMessageEvents []twitter.DirectMessageEvent `json:"direct_message_events"`
+	FavoriteEvents      []json.RawMessage            `json:"favorite_events"`
+	FollowEvents        []json.RawMessage            `json:"follow_events"`
+	TweetDeleteEvents   []json.RawMessage            `json:"tweet_delete_events"`
+	Users               map[string]entity.EventUser  `json:"users"`
 }
 
 func (s *server) twistributer(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +46,13 @@ func parseEvent(params event) []entity.Message {
 		messages = append(messages, entity.Tweet(tweet).NewMessage(params.ForUserID))
 	}
 
-	// TODO: direct_message_events
+	for _, message := range params.DirectMessageEvents {
+		messages = append(messages, entity.NewDirectMessageFromDirectMessageEvent(
+			message,
+			params.Users[message.Message.Target.RecipientID].NewUser(),
+			params.Users[message.Message.SenderID].NewUser(),
+		).NewMessage(params.ForUserID))
+	}
 
 	for _, event := range params.FavoriteEvents {
 		messages = append(

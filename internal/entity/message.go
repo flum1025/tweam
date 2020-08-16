@@ -27,6 +27,8 @@ func (m Message) Key() (string, error) {
 	switch m.Type {
 	case MessageTypeTweet:
 		return fmt.Sprintf("%s_%s_%d", m.ForUserID, m.Type, m.Data.(Tweet).ID), nil
+	case MessageTypeDirectMessage:
+		return fmt.Sprintf("%s_%s_%d", m.ForUserID, m.Type, m.Data.(DirectMessage).ID), nil
 	case MessageTypeFavorite, MessageTypeFollow, MessageTypeTweetDelete:
 		j, err := json.Marshal(m.Data)
 		if err != nil {

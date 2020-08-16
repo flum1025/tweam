@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
+	github.com/davecgh/go-spew v1.1.1
 	github.com/dghubble/go-twitter v0.0.0-20200725221434-4bc8ad7ad1b4
 	github.com/dghubble/oauth1 v0.6.0
 	github.com/go-chi/chi v4.1.2+incompatible
