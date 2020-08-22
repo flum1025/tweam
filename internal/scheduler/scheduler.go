@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	timeout                  = time.Duration(25 * time.Second)
-	homeTimelineCursorKey    = "home_timeline_cursor"
-	mentionTimelineCursorKey = "mention_timeline_cursor"
+	timeout                     = time.Duration(25 * time.Second)
+	homeTimelineCursorKeyTpl    = "home_timeline_cursor_%s"
+	mentionTimelineCursorKeyTpl = "mention_timeline_cursor_%s"
 )
 
 type scheduler struct {
@@ -89,7 +89,7 @@ func (s *scheduler) homeTimeline(config config.Account) func() {
 
 	return s.timeline(
 		"homeTimeline",
-		homeTimelineCursorKey,
+		homeTimelineCursorKeyTpl,
 		config,
 		client.HomeTimeline,
 	)
@@ -100,7 +100,7 @@ func (s *scheduler) mentionTimeline(config config.Account) func() {
 
 	return s.timeline(
 		"mentionTimeline",
-		mentionTimelineCursorKey,
+		mentionTimelineCursorKeyTpl,
 		config,
 		client.MentionTimeline,
 	)
@@ -108,10 +108,12 @@ func (s *scheduler) mentionTimeline(config config.Account) func() {
 
 func (s *scheduler) timeline(
 	eventTitle string,
-	cursorKey string,
+	cursorKeyTpl string,
 	config config.Account,
 	fetcher func(int64) (entity.Tweets, error),
 ) func() {
+	cursorKey := fmt.Sprintf(cursorKeyTpl, config.ID)
+
 	return eventWrapper(eventTitle, config.ID, func() {
 		cursorPtr, err := s.redis.GetInt64(cursorKey)
 		if err != nil {
@@ -130,12 +132,16 @@ func (s *scheduler) timeline(
 			return
 		}
 
+		if len(tweets) == 0 {
+			return
+		}
+
 		if err = s.app.PublishMessages(tweets.Messages(config.ID)); err != nil {
 			log.Println(fmt.Sprintf("[ERROR] failed to publish messages: %v", err))
 			return
 		}
 
-		if err = s.redis.Set(homeTimelineCursorKey, 123, 0); err != nil {
+		if err = s.redis.Set(cursorKey, tweets[0].ID, 0); err != nil {
 			log.Println(fmt.Sprintf("[ERROR] set cursor key=%s: %v", cursorKey, err))
 			return
 		}
