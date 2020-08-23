@@ -16,7 +16,7 @@ type event struct {
 	TweetCreateEvents   []twitter.Tweet              `json:"tweet_create_events"`
 	DirectMessageEvents []twitter.DirectMessageEvent `json:"direct_message_events"`
 	FavoriteEvents      []json.RawMessage            `json:"favorite_events"`
-	FollowEvents        []json.RawMessage            `json:"follow_events"`
+	FollowEvents        []entity.FollowRaw           `json:"follow_events"`
 	TweetDeleteEvents   []json.RawMessage            `json:"tweet_delete_events"`
 	Users               map[string]entity.EventUser  `json:"users"`
 }
@@ -54,23 +54,19 @@ func parseEvent(params event) []entity.Message {
 		).NewMessage(params.ForUserID))
 	}
 
+	for _, event := range params.FollowEvents {
+		messages = append(
+			messages,
+			event.NewMessage(params.ForUserID),
+		)
+	}
+
 	for _, event := range params.FavoriteEvents {
 		messages = append(
 			messages,
 			entity.Message{
 				ForUserID: params.ForUserID,
 				Type:      entity.MessageTypeFavorite,
-				Data:      event,
-			},
-		)
-	}
-
-	for _, event := range params.FollowEvents {
-		messages = append(
-			messages,
-			entity.Message{
-				ForUserID: params.ForUserID,
-				Type:      entity.MessageTypeFollow,
 				Data:      event,
 			},
 		)
