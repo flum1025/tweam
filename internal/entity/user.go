@@ -26,6 +26,7 @@ func (u EventUser) NewUser() *twitter.User {
 
 	return &twitter.User{
 		ID:                   id,
+		IDStr:                u.ID,
 		CreatedAt:            u.CreatedTimestamp,
 		Name:                 u.Name,
 		ScreenName:           u.ScreenName,
